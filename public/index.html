@@ -1,0 +1,70 @@
+<html>
+<head>
+<title>soundtest.htm</title>
+</head>
+<body>
+<<canvas class="visualizer" width="1024" height="384"></canvas> 
+<script>
+
+navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+
+var canvas = document.querySelector('.visualizer');
+var ctx = canvas.getContext("2d");
+var actx = new (window.AudioContext || window.webkitAudioContext)();
+var analyser = actx.createAnalyser();
+analyser.minDecibels = -120;
+analyser.maxDecibels = -10;
+analyser.smoothingTimeConstant = 0;
+analyser.fftSize = 2048;
+
+if (navigator.getUserMedia) {
+   navigator.getUserMedia(
+      {
+         audio: true
+      },
+      function(stream) {
+         source = actx.createMediaStreamSource(stream);
+         source.connect(analyser);
+      	 frame();
+      },
+      function(err) {
+         console.log('getUserMedia error: ' + err);
+      }
+   );
+} else {
+   console.log('getUserMedia is not supported by your browser!');
+}
+
+function frame() {
+  drawVisual = requestAnimationFrame(frame);
+  var freqArray = new Uint8Array(analyser.frequencyBinCount);
+  document.title = analyser.frequencyBinCount;
+  analyser.getByteFrequencyData(freqArray);
+
+  // Clear background
+  ctx.fillStyle = '#F0F0F0';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw vertical lines at 0, 5, 10, 15, 20 kHz
+  ctx.strokeStyle = '#808080';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  var h = canvas.width * 2 / actx.sampleRate;
+  for (var i = 0; i <= 20000; i += 5000) {
+    var x = i * h;
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+  }
+  ctx.stroke();
+
+  // Draw spectrum
+  ctx.fillStyle = '#000000';
+  var barWidth = canvas.width / analyser.frequencyBinCount;
+  for(var i = 0; i < analyser.frequencyBinCount; i++) {
+    var barHeight = freqArray[i] * canvas.height / 255;
+    ctx.fillRect(barWidth * i, canvas.height - barHeight, barWidth, barHeight);
+  }
+}
+</script>
+</body>
+</html>
