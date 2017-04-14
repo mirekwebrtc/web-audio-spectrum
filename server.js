@@ -1,4 +1,4 @@
-var host = '193.1.28.19';
+var host = '193.(...).19';
 var port = 8181;
 var securePort = 443;
 var path = require('path');
